@@ -2,6 +2,33 @@
 This repository contains my submission for the
 [Sortable coding challenge](http://sortable.com/challenge/).
 
+# Quick Start Instructions (Linux):
+
+1. `cd` into the repo's root directory
+2. Download a copy of Spark by executing
+`wget http://d3kbcqa49mib13.cloudfront.net/spark-1.3.1-bin-hadoop2.6.tgz`
+2. Exectue `tar -xf ./spark-1.3.1-bin-hadoop2.6.tgz`
+3. Run `./run.sh`
+4. Results will be saved in results.txt.
+
+# Compiling
+
+I included a compiled jar of my program, but if you want to compile it yourself you need sbt. Since
+Sortable's website says that they use Scala, I assume you already have it installed. If not, you
+can get sbt [here](http://www.scala-sbt.org/download.html).
+
+To compile my program execute `sbt package` from the root directory of this repository. This will
+update the jar file in target/scala-2.10.
+
+# Running
+
+Running this program requires Spark. If you do not have Spark you can download a recent copy
+[here](http://spark.apache.org/downloads.html). Set the `sparkPath` configuration option in run.sh
+to be the path to Spark's home folder.
+
+After `sparkPath` is set, you can run my program with run.sh. Other input and output configuration
+options can be modified in run.sh.
+
 # Spark
 
 I chose to complete this coding challenge using Apache Spark. This choice was made for a few
@@ -51,7 +78,7 @@ After all the filtering above, one listing may be matched to multiple products. 
 have a non-empty family field then I only consider those products. I then choose the product that
 had more words from the manufacturer in the title.
 
-# Known issues
+# Known Issues
 
 The challenge says "A single price listing may match at most one product." Listings in the input
 file are not unique (example:

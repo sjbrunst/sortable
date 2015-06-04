@@ -12,9 +12,12 @@ resultsFolder=./results
 # final output file:
 resultsFile=./results.txt
 
+# installation directory for Spark
+sparkPath=./spark-1.3.1-bin-hadoop2.6
+
 ### End of Configuration ###
 
-../spark-1.3.1-bin-hadoop2.6/bin/spark-submit --class SortableChallenge --master local[4] target/scala-2.10/sortable_2.10-1.0.jar \
+${sparkPath}/bin/spark-submit --class SortableChallenge --master local[4] target/scala-2.10/sortable_2.10-1.0.jar \
     --listings $listingsFile \
     --products $productsFile \
     --results $resultsFolder
