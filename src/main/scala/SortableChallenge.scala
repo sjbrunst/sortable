@@ -5,8 +5,13 @@ import org.apache.spark.sql.SQLContext
 
 object SortableChallenge {
 
-  // characters used to divide strings into arrays of words
+  // characters used to divide strings into arrays of words:
   val splitCharacters = Array(' ','-',';','.',',','(',')')
+
+  // default values for command line arguments:
+  var listingsPath = "listings.txt"
+  var productsPath = "products.txt"
+  var resultsPath = "results"
 
   case class Product(
         product_name: String,   // A unique id for the product
@@ -42,12 +47,31 @@ object SortableChallenge {
       listings: Array[Listing]
     )
 
+  def processArgs(list: List[String]): Unit = {
+    list match {
+      case Nil => return
+      case "--listings" :: value :: tail => {
+          listingsPath = value
+          processArgs(tail)
+        }
+      case "--products" :: value :: tail => {
+          productsPath = value
+          processArgs(tail)
+        }
+      case "--results" :: value :: tail => {
+          resultsPath = value
+          processArgs(tail)
+        }
+      case string :: tail => {
+          println("Unknown option: " + string)
+          System.exit(1)
+        }
+      }
+    }
+
   def main(args: Array[String]) {
 
-    // TODO: pass these as command line arguments
-    val listingsPath = "listings.txt"
-    val productsPath = "products.txt"
-    val resultsPath = "results"
+    processArgs(args.toList)
 
     val conf = new SparkConf().setAppName("Sortable")
     val sc = new SparkContext(conf)
