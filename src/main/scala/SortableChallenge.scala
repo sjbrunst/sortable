@@ -38,7 +38,7 @@ object SortableChallenge {
     price: String         // price, e.g. 19.99, 100.00
   )
 
-  // Listing with the title and manufacturer split into an array of words:
+  // Listing's title and manufacturer split into an array of words:
   case class SplitListing(
     title: Array[String],        // description of product for sale
     manufacturer: Array[String]  // who manufactures the product for sale
@@ -49,8 +49,9 @@ object SortableChallenge {
     listings: Array[Listing]
   )
 
-  def processArgs(list: List[String]): Unit = {
-    list match {
+  // Read the command line arguments
+  def processArgs(argList: List[String]): Unit = {
+    argList match {
       case Nil => return
       case "--listings" :: value :: tail => {
         listingsPath = value
@@ -64,8 +65,8 @@ object SortableChallenge {
         resultsPath = value
         processArgs(tail)
       }
-      case string :: tail => {
-        println("Unknown option: " + string)
+      case otherString :: tail => {
+        println("Unknown option: " + otherString)
         System.exit(1)
       }
     }
@@ -83,44 +84,49 @@ object SortableChallenge {
     // All Listings from the input file:
     val listings = sqlContext.jsonFile(listingsPath)
                              .select("title","manufacturer","currency","price")
-                             .map(row => Listing(row.getString(0),
-                                                 row.getString(1),
-                                                 row.getString(2),
-                                                 row.getString(3)))
+                             .map(row => Listing(
+                                           row.getString(0),  // title
+                                           row.getString(1),  // manufacturer
+                                           row.getString(2),  // currency
+                                           row.getString(3))) // price
 
     // (SplitListing,Listing) pairs for listings we wish to match:
     val splitListings = listings.distinct() // without ids, listings are not unique
                                             // save time later by removing duplicates now
                                 // avoid "battery for" or "lens for" false positives:
-                                .filter(sl => !(sl.title.contains("for") ||
-                                                sl.title.contains("pour") ||
-                                                sl.title.contains("für")))
-                                .map(l => (SplitListing(l.title
-                                                         .toLowerCase()
-                                                         .split(splitCharacters),
-                                                        l.manufacturer
-                                                         .toLowerCase()
-                                                         .split(splitCharacters)),
+                                .filter(l => !(l.title.contains("for") ||
+                                               l.title.contains("pour") ||
+                                               l.title.contains("für")))
+                                .map(l => (SplitListing(
+                                             l.title
+                                              .toLowerCase()
+                                              .split(splitCharacters),
+                                             l.manufacturer
+                                              .toLowerCase()
+                                              .split(splitCharacters)),
                                            l)) // keep the original listing for output at the end
                                 .cache()
 
     // SplitProducts for all products in the input file:
     val splitProducts = sqlContext.jsonFile(productsPath)
                                   .select("product_name","manufacturer","family","model")
-                                  .map(row => SplitProduct(row.getString(0),
-                                                           row.getString(1)
-                                                              .toLowerCase()
-                                                              .split(" "),
-                                                           // "family" is optional:
-                                                           if (row.isNullAt(2)) {Array()}
-                                                           else {row.getString(2)
-                                                                    .toLowerCase()
-                                                                    .split(splitCharacters)},
-                                                           row.getString(3)
-                                                              .toLowerCase()
-                                                              // next 2 lines remove spaces, etc:
-                                                              .split(splitCharacters)
-                                                              .reduce(_ + _)))
+                                  .map(row => SplitProduct(
+                                                row.getString(0),       // product_name
+                                                row.getString(1)        // manufacturer
+                                                   .toLowerCase()
+                                                   .split(" "),
+                                                if (row.isNullAt(2)) {  // family
+                                                  Array()
+                                                } else {
+                                                  row.getString(2)
+                                                     .toLowerCase()
+                                                     .split(splitCharacters)
+                                                },
+                                                row.getString(3)        // model
+                                                   .toLowerCase()
+                                                   // next 2 lines remove spaces, etc:
+                                                   .split(splitCharacters)
+                                                   .reduce(_ + _)))
                                   .cache()
 
     // Possible matches are stored as (SplitProduct,(SplitListing,Listing)) pairs:
@@ -176,8 +182,9 @@ object SortableChallenge {
 
     val results = uniqueListings.map{case (l, sp) => (sp.product_name, l)}
                                 .groupByKey()
-                                .map{case (product_name,lList) => Result(product_name,
-                                                                         lList.toArray)}
+                                .map{case (product_name,lList) => Result(
+                                                                    product_name,
+                                                                    lList.toArray)}
 
     results.toDF().toJSON.saveAsTextFile(resultsPath)
 
